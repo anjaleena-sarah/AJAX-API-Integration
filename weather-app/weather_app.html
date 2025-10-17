@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Weather App</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      max-width: 600px; 
+      margin: 2rem auto; 
+      text-align: center;
+    }
+    input, button { 
+      padding: 8px 12px; 
+      margin: 5px;
+    }
+    #result { 
+      margin-top: 1rem; 
+      padding: 10px; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+    }
+  </style>
+</head>
+<body>
+  <h1>Weather App</h1>
+
+  <!-- Input box to type city -->
+  <input type="text" id="city" placeholder="Enter city name (e.g. Delhi, London)" />
+  <button id="btn">Get Weather</button>
+
+  <div id="result">Type a city and click the button…</div>
+
+  <script>
+    async function getWeather() {
+      const city = document.getElementById("city").value.trim();
+      const resultBox = document.getElementById("result");
+
+      if (!city) {
+        resultBox.textContent = "Please enter a city name.";
+        return;
+      }
+
+      resultBox.textContent = "Loading…";
+
+      try {
+        // Step 1: Get latitude/longitude using geocoding API
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+        const geoResponse = await fetch(geoUrl);
+        const geoData = await geoResponse.json();
+
+        if (!geoData.results || geoData.results.length === 0) {
+          resultBox.textContent = "City not found. Try another city.";
+          return;
+        }
+
+        const { latitude, longitude, name, country } = geoData.results[0];
+
+        // Step 2: Fetch weather using latitude/longitude
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+        const weatherResponse = await fetch(weatherUrl);
+        const weatherData = await weatherResponse.json();
+
+        const temp = weatherData.current_weather.temperature; // °C
+        const wind = weatherData.current_weather.windspeed;   // km/h
+
+        // Step 3: Show result
+        resultBox.textContent = `${name}, ${country} → Temperature: ${temp}°C | Wind: ${wind} km/h`;
+      } 
+      catch (err) {
+        resultBox.textContent = "Sorry, couldn't load weather. Please try again.";
+        console.error(err);
+      }
+    }
+
+    document.getElementById("btn").addEventListener("click", getWeather);
+  </script>
+</body>
+</html>
